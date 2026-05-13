@@ -14,10 +14,8 @@ byte loopCount[MAX_TOTAL_STEP];  // ステップ毎の現在のループ回数
 Step currentStep;                // 現在実行中のステップ
 uint16_t currentStepNum = 0;         // 現在実行中のステップ番号
 uint32_t lastStepTime = 0;       // ステップに遷移した時刻
-byte initialLoopSetting;         // 初回の大ループ回数変更用
-uint16_t initialLoopTimeRemain;       // 初回の大ループの残り時間
 uint16_t loopTimeRemain;              // 大ループの残り時間
-bool isFirstGlobalCycle = true;  // 無限ループの初回かどうか
+LoopOverride loopOverride;       // 1周目のみのループ回数上書き設定
 byte activeSeq = 0;              // 現在アクティブなシーケンス番号
 
 unsigned long btn0PressTime = 0;      // ボタン0を押した時刻（停止中のみ記録）
@@ -54,9 +52,7 @@ void setup() {
   // ループカウンタ初期化
   memset(loopCount, 0, sizeof(loopCount));
 
-  // 初回のループ所要時間設定用(最大値)
-  initialLoopSetting = seqFruitSec[activeSeq] / seqCLoopSec[activeSeq] + 1;
-  initialLoopTimeRemain = initialLoopSetting * seqCLoopSec[activeSeq];
+  loopOverride = { seqOutermostLoopNo[activeSeq], (byte)(seqFruitSec[activeSeq] / seqCLoopSec[activeSeq] + 1) };
 
   loadStep(0);  // 初期ステップを読み込んでおく
 }
@@ -80,11 +76,10 @@ void loop() {
       }
     }
     if (button[0].wasReleased && !btn0LongPressTriggered) {
-      if ((long)initialLoopSetting * seqCLoopSec[activeSeq] > seqFruitSec[activeSeq]) {
-        initialLoopSetting = 0;
+      if ((long)loopOverride.count * seqCLoopSec[activeSeq] > seqFruitSec[activeSeq]) {
+        loopOverride.count = 0;
       }
-      initialLoopSetting++;
-      initialLoopTimeRemain = initialLoopSetting * seqCLoopSec[activeSeq];
+      loopOverride.count++;
     }
   }
 
@@ -105,8 +100,8 @@ void loop() {
     updateDigits(activeSeq);  // シーケンス切り替え直後はシーケンス番号を表示
   } else {
     dpState = 0b1010;  // 停止中なら設定時間の区切りとしてDPを表示
-    if (isFirstGlobalCycle) {
-      updateDigits(secondTo4digits(initialLoopTimeRemain));  // 最初のループでは設定時間を表示
+    if (loopOverride.count > 0) {
+      updateDigits(secondTo4digits(loopOverride.count * seqCLoopSec[activeSeq]));  // オーバーライド設定時間を表示
     } else {
       updateDigits(secondTo4digits(loopTimeRemain));  // 残り時間を表示
     }
@@ -135,6 +130,13 @@ void driveLED() {
   currentDigit = (currentDigit + 1) % 4;
 }
 
+byte getLoopTarget() {
+  if (loopOverride.count > 0 && currentStepNum == loopOverride.stepNum) {
+    return loopOverride.count;
+  }
+  return currentStep.loop;
+}
+
 void executeSwitchControl() {
   if (run) {
     uint32_t now = millis();
@@ -151,42 +153,29 @@ void executeSwitchControl() {
     }
 
     // --- ドット表示ロジック ---
-    if (currentStep.loop != 0) {
-      // 大外のループの「目標回数」を取得
-      byte targetLimit = (currentStepNum == seqOutermostLoopNo[activeSeq] && isFirstGlobalCycle) ? initialLoopSetting : currentStep.loop;
-
-      if (currentStepNum == seqOutermostLoopNo[activeSeq]) {
-        // 残り回数を計算
-        byte remaining = 0;
-        if (targetLimit >= loopCount[currentStep.step]) {
-          remaining = targetLimit - loopCount[currentStep.step];
-        }
-        loopTimeRemain = remaining * seqCLoopSec[activeSeq];
-        dpState = (remaining > 15 ? 15 : remaining);
-      }
+    if (currentStep.loop != 0 && currentStepNum == seqOutermostLoopNo[activeSeq]) {
+      byte targetLimit = getLoopTarget();
+      byte remaining = (targetLimit >= loopCount[currentStep.step]) ? targetLimit - loopCount[currentStep.step] : 0;
+      loopTimeRemain = remaining * seqCLoopSec[activeSeq];
+      dpState = (remaining > 15 ? 15 : remaining);
     }
 
     // 指定の時間が経過したかチェック
     if (now - lastStepTime >= currentStep.duration()) {
-      // ループ開始ステップならループカウンタ増やす
       if (currentStep.loop != 0) {
         loopCount[currentStep.step]++;
       }
-
-      byte targetLoopLimit = (currentStepNum == seqOutermostLoopNo[activeSeq] && isFirstGlobalCycle) ? initialLoopSetting : currentStep.loop;
-
-      if (currentStep.loop != 0 && loopCount[currentStep.step] > targetLoopLimit) {
-        // ループ回数を満たした場合現在のステップのループカウンタをリセットする
+      byte limit = getLoopTarget();
+      if (currentStep.loop != 0 && loopCount[currentStep.step] > limit) {
         loopCount[currentStep.step] = 0;
-        // ループ先のステップを読み込む
+        if (currentStepNum == loopOverride.stepNum) {
+          loopOverride.count = 0;  // 1周完了でオーバーライドを消費
+        }
         loadStep(currentStep.loopNext);
       } else {
-        // ループでない場合またはループが足りない場合は次のステップを読み込む
         loadStep(currentStep.next);
       }
-      // 最終シーケンスに到達したら初回フラグを下ろす
-      if (currentStepNum == seqLastSeqNo[activeSeq]) isFirstGlobalCycle = false;
-      lastStepTime = now;  // ステップに移行した時刻を記録
+      lastStepTime = now;
     }
   }
 }
@@ -220,9 +209,7 @@ void loadStep(uint16_t num) {
 
 void resetSequenceState() {
   memset(loopCount, 0, sizeof(loopCount));
-  initialLoopSetting = seqFruitSec[activeSeq] / seqCLoopSec[activeSeq] + 1;
-  initialLoopTimeRemain = initialLoopSetting * seqCLoopSec[activeSeq];
   loopTimeRemain = 0;
-  isFirstGlobalCycle = true;
+  loopOverride = { seqOutermostLoopNo[activeSeq], (byte)(seqFruitSec[activeSeq] / seqCLoopSec[activeSeq] + 1) };
   loadStep(0);
 }

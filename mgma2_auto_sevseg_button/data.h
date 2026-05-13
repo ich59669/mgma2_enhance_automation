@@ -417,7 +417,6 @@ const uint16_t seqTotalStep[SEQUENCE_COUNT] = {
   (uint16_t)(sizeof(sequence2) / sizeof(Step)),
 };
 const uint16_t seqOutermostLoopNo[SEQUENCE_COUNT] = { 9,   0, 0 };
-const uint16_t seqLastSeqNo[SEQUENCE_COUNT]       = { 184, 0, 0 };
 const int      seqCLoopSec[SEQUENCE_COUNT]        = { colosseumLoopTimeSec_seq0, 60,   60   };
 const int      seqFruitSec[SEQUENCE_COUNT]        = { fruitRipenTimeSec_seq0,    3600, 3600 };
 

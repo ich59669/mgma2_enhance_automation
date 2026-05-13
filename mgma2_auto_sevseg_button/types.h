@@ -47,6 +47,12 @@ struct ButtonState {
   }
 };
 
+// --- ループ回数オーバーライド定義 ---
+struct LoopOverride {
+  uint16_t stepNum;  // 上書き対象のステップ番号
+  byte count;        // 上書きするループ回数（0 = 無効）
+};
+
 // --- ステップ定義 ---
 struct Step {
   uint16_t step;
