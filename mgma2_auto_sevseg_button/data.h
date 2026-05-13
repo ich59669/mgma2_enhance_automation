@@ -398,7 +398,52 @@ const Step sequence0[] PROGMEM = {
 
 // --- 追加シーケンス（ここにシーケンスデータを定義する） ---
 const Step sequence1[] PROGMEM = {
-  { 0, Hat::CENTER, 0, false, 100, 0, 0, 0 },
+  { 0, Hat::CENTER, 0, false, 10, 1, 0, 0 },
+  { 1, Hat::CENTER, 0, false, 20, 2, 0, 0 },
+  { 2, Hat::CENTER, Button::MINUS, true, 1, 3, 0, 0 },
+  { 3, Hat::CENTER, Button::MINUS, false, 9, 4, 0, 0 },
+  { 4, Hat::CENTER, 0, false, 1, 5, 0, 0 },
+  { 5, Hat::CENTER, 0, false, 1, 6, 0, 0 },
+  { 6, Hat::CENTER, Button::Y, true, 1, 7, 0, 0 },
+  { 7, Hat::CENTER, Button::B, true, 999, 8, 0, 0 },
+  { 8, Hat::CENTER, Button::Y, false, 1, 9, 0, 0 },
+  { 9, Hat::CENTER, Button::B, false, 1, 10, 0, 0 },
+  { 10, Hat::CENTER, Button::A, true, 1, 11, 0, 0 },
+  { 11, Hat::CENTER, Button::A, false, 9, 12, 0, 0 },
+  { 12, Hat::CENTER, Button::Y, true, 1, 13, 0, 0 },
+  { 13, Hat::CENTER, Button::B, true, 199, 14, 0, 0 },
+  { 14, Hat::CENTER, Button::Y, false, 1, 15, 0, 0 },
+  { 15, Hat::CENTER, Button::B, false, 1, 16, 0, 0 },
+  { 16, Hat::CENTER, Button::A, true, 1, 17, 0, 0 },
+  { 17, Hat::CENTER, Button::A, false, 9, 18, 0, 0 },
+  { 18, Hat::CENTER, Button::Y, true, 1, 19, 0, 0 },
+  { 19, Hat::CENTER, Button::B, true, 199, 20, 0, 0 },
+  { 20, Hat::CENTER, Button::Y, false, 1, 21, 0, 0 },
+  { 21, Hat::CENTER, Button::B, false, 1, 22, 0, 0 },
+  { 22, Hat::CENTER, Button::A, true, 1, 23, 0, 0 },
+  { 23, Hat::CENTER, Button::A, false, 9, 24, 0, 0 },
+  { 24, Hat::CENTER, Button::Y, true, 1, 25, 0, 0 },
+  { 25, Hat::CENTER, Button::B, true, 239, 26, 0, 0 },
+  { 26, Hat::CENTER, Button::Y, false, 1, 27, 0, 0 },
+  { 27, Hat::CENTER, Button::B, false, 9, 28, 0, 0 },
+  { 28, Hat::CENTER, 0, false, 1, 29, 4, 45 },
+  { 29, Hat::CENTER, Button::X, true, 1, 30, 0, 0 },
+  { 30, Hat::CENTER, Button::X, false, 2, 31, 0, 0 },
+  { 31, Hat::CENTER, Button::A, true, 1, 32, 0, 0 },
+  { 32, Hat::CENTER, Button::A, false, 2, 33, 0, 0 },
+  { 33, Hat::UP, 0, false, 1, 34, 0, 0 },
+  { 34, Hat::CENTER, 0, false, 2, 35, 0, 0 },
+  { 35, Hat::CENTER, Button::A, true, 1, 36, 0, 0 },
+  { 36, Hat::CENTER, Button::A, false, 2, 37, 0, 0 },
+  { 37, Hat::CENTER, Button::A, true, 1, 38, 0, 0 },
+  { 38, Hat::CENTER, Button::A, false, 9, 39, 0, 0 },
+  { 39, Hat::CENTER, 0, false, 1, 40, 2, 44 },
+  { 40, Hat::CENTER, Button::Y, true, 1, 41, 0, 0 },
+  { 41, Hat::CENTER, Button::B, true, 1949, 42, 0, 0 },
+  { 42, Hat::CENTER, Button::Y, false, 1, 43, 0, 0 },
+  { 43, Hat::CENTER, Button::B, false, 9, 39, 0, 0 },
+  { 44, Hat::CENTER, 0, false, 1, 28, 0, 0 },
+  { 45, Hat::CENTER, 0, false, 10000, 45, 0, 0 }
 };
 const Step sequence2[] PROGMEM = {
   { 0, Hat::CENTER, 0, false, 100, 0, 0, 0 },
@@ -416,9 +461,9 @@ const uint16_t seqTotalStep[SEQUENCE_COUNT] = {
   (uint16_t)(sizeof(sequence1) / sizeof(Step)),
   (uint16_t)(sizeof(sequence2) / sizeof(Step)),
 };
-const uint16_t seqOutermostLoopNo[SEQUENCE_COUNT] = { 9,   0, 0 };
-const int      seqCLoopSec[SEQUENCE_COUNT]        = { colosseumLoopTimeSec_seq0, 60,   60   };
-const int      seqFruitSec[SEQUENCE_COUNT]        = { fruitRipenTimeSec_seq0,    3600, 3600 };
+const uint16_t seqOutermostLoopNo[SEQUENCE_COUNT] = { 9, 0, 0 };
+const int seqCLoopSec[SEQUENCE_COUNT] = { colosseumLoopTimeSec_seq0, 60, 60 };
+const int seqFruitSec[SEQUENCE_COUNT] = { fruitRipenTimeSec_seq0, 3600, 3600 };
 
 // loopCount 配列サイズ用（全シーケンス中の最大ステップ数）
 const uint16_t MAX_TOTAL_STEP = sizeof(sequence0) / sizeof(Step);
