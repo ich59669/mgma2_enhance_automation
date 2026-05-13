@@ -94,7 +94,11 @@ void loop() {
 
   // 表示の切り替え
   if (run) {
-    updateDigits(currentStepNum);  // 実行中はステップ番号を表示
+    uint32_t elapsed = millis() - lastStepTime;
+    uint32_t dur = currentStep.duration();
+    uint32_t progress = (dur > 0) ? (elapsed * 10 / dur) : 0;
+    if (progress > 9) progress = 9;
+    updateDigits(currentStepNum + progress * 1000);
   } else if (millis() < seqDisplayUntil) {
     dpState = 0;
     updateDigits(activeSeq);  // シーケンス切り替え直後はシーケンス番号を表示
