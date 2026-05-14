@@ -1,7 +1,12 @@
+#include <EEPROM.h>
 #include <TimerOne.h>
 #include <switch_controller.h>
 
 #include "data.h"
+
+const uint8_t EEPROM_MAGIC      = 0xA5;
+const int     EEPROM_ADDR_MAGIC = 0;
+const int     EEPROM_ADDR_SEQ   = 1;
 
 // --- LED関連の変数 ---
 volatile byte currentDigit = 0;  // 割り込み内で使う変数はvolatileを付ける
@@ -52,6 +57,12 @@ void setup() {
   // ループカウンタ初期化
   memset(loopCount, 0, sizeof(loopCount));
 
+  // EEPROMから選択シーケンスを復元
+  if (EEPROM.read(EEPROM_ADDR_MAGIC) == EEPROM_MAGIC) {
+    byte saved = EEPROM.read(EEPROM_ADDR_SEQ);
+    if (saved < SEQUENCE_COUNT) activeSeq = saved;
+  }
+
   loopOverride = { seqOutermostLoopNo[activeSeq], (byte)(seqFruitSec[activeSeq] / seqCLoopSec[activeSeq] + 1) };
 
   loadStep(0);  // 初期ステップを読み込んでおく
@@ -71,6 +82,8 @@ void loop() {
       if (millis() - btn0PressTime >= LONG_PRESS_MS) {
         btn0LongPressTriggered = true;
         activeSeq = (activeSeq + 1) % SEQUENCE_COUNT;
+        EEPROM.update(EEPROM_ADDR_MAGIC, EEPROM_MAGIC);
+        EEPROM.update(EEPROM_ADDR_SEQ, activeSeq);
         resetSequenceState();
         seqDisplayUntil = millis() + SEQ_DISPLAY_MS;
       }
