@@ -23,6 +23,7 @@ uint16_t loopTimeRemain;              // 大ループの残り時間
 LoopOverride loopOverride;       // 1周目のみのループ回数上書き設定
 byte activeSeq = 0;              // 現在アクティブなシーケンス番号
 
+bool exitLoopFlag = false;  // ループ早期脱出フラグ
 uint32_t seqDisplayUntil = 0;  // シーケンス番号表示の終了時刻
 
 const unsigned long SEQ_DISPLAY_MS = 2000;  // シーケンス番号表示時間 (ms)
@@ -83,6 +84,12 @@ void loop() {
         loopOverride.count = 0;
       }
       loopOverride.count++;
+    }
+  }
+
+  if (run) {
+    if (button[0].wasPressed) {
+      exitLoopFlag = !exitLoopFlag;
     }
   }
 
@@ -173,7 +180,8 @@ void executeSwitchControl() {
         loopCount[currentStep.step]++;
       }
       byte limit = getLoopTarget();
-      if (currentStep.loop != 0 && loopCount[currentStep.step] > limit) {
+      if (currentStep.loop != 0 && (loopCount[currentStep.step] > limit || exitLoopFlag)) {
+        exitLoopFlag = false;
         loopCount[currentStep.step] = 0;
         if (currentStepNum == loopOverride.stepNum) {
           loopOverride.count = 0;  // 1周完了でオーバーライドを消費
