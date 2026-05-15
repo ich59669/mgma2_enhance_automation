@@ -3,23 +3,29 @@
 
 // --- ボタン状態定義 ---
 struct ButtonState {
-  const byte pin;    // 入力ピン番号
-  bool state;        // 今押されているか
-  bool lastState;    // 直前に押されていたか
-  bool wasPressed;   // 今押された瞬間か
-  bool wasReleased;  // 今離された瞬間か
+  const byte pin;           // 入力ピン番号
+  bool state;               // 今押されているか
+  bool lastState;           // 直前に押されていたか
+  bool wasPressed;          // 今押された瞬間か
+  bool wasReleased;         // 今離された瞬間か
+  bool wasLongPressed;      // 長押し確定した瞬間か
+  bool longPressTriggered;  // 長押し処理済みフラグ
   unsigned long lastDebounceTime;
+  unsigned long pressTime;  // 押した時刻
 
-  static constexpr byte debounceDelay = 50;  // チャタリング判定時間 (ms)
+  static constexpr byte          debounceDelay = 50;    // チャタリング判定時間 (ms)
+  static constexpr unsigned long longPressMs   = 1000;  // 長押し判定時間 (ms)
 
   // コンストラクタ
   ButtonState(byte p)
-    : pin(p), state(false), lastState(HIGH), wasPressed(false), wasReleased(false), lastDebounceTime(0) {}
+    : pin(p), state(false), lastState(HIGH), wasPressed(false), wasReleased(false),
+      wasLongPressed(false), longPressTriggered(false), lastDebounceTime(0), pressTime(0) {}
 
   void update() {
     const bool currentRead = digitalRead(pin);
     wasPressed = false;
     wasReleased = false;
+    wasLongPressed = false;
 
     // 1. チャタリング対策（前回読み取った状態から変化があった場合のみタイマーリセット）
     if (currentRead != lastState) {
@@ -32,12 +38,20 @@ struct ButtonState {
       // 3. 状態が確定し、かつ「HIGHからLOWに変わった瞬間」だけを検知（エッジ検出）
       // ※INPUT_PULLUPなので、押すとLOW、離すとHIGH
       if (currentRead == LOW && state == false) {
-        state = true;       // 「今押されている」ことを記録
-        wasPressed = true;  // 「押された瞬間だけ」
+        state = true;
+        wasPressed = true;
+        pressTime = millis();
+        longPressTriggered = false;
       }
     }
 
-    // 4. ボタンが離されたことを検知してフラグを下ろす
+    // 4. 長押し判定（未処理かつ保持中に閾値を超えた瞬間だけ発火）
+    if (state && !longPressTriggered && (millis() - pressTime >= longPressMs)) {
+      wasLongPressed = true;
+      longPressTriggered = true;
+    }
+
+    // 5. ボタンが離されたことを検知してフラグを下ろす
     if (currentRead == HIGH && state == true) {
       state = false;
       wasReleased = true;

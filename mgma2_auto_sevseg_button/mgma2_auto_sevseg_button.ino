@@ -23,11 +23,8 @@ uint16_t loopTimeRemain;              // 大ループの残り時間
 LoopOverride loopOverride;       // 1周目のみのループ回数上書き設定
 byte activeSeq = 0;              // 現在アクティブなシーケンス番号
 
-unsigned long btn0PressTime = 0;      // ボタン0を押した時刻（停止中のみ記録）
-bool btn0LongPressTriggered = false;  // 長押し処理済みフラグ
-uint32_t seqDisplayUntil = 0;         // シーケンス番号表示の終了時刻
+uint32_t seqDisplayUntil = 0;  // シーケンス番号表示の終了時刻
 
-const unsigned long LONG_PRESS_MS  = 1000;  // 長押し判定時間 (ms)
 const unsigned long SEQ_DISPLAY_MS = 2000;  // シーケンス番号表示時間 (ms)
 
 void setup() {
@@ -74,21 +71,14 @@ void loop() {
 
   // 停止中のボタン0操作：長押しでシーケンス切り替え、短押しで初回ループ回数変更
   if (!run) {
-    if (button[0].wasPressed) {
-      btn0PressTime = millis();
-      btn0LongPressTriggered = false;
+    if (button[0].wasLongPressed) {
+      activeSeq = (activeSeq + 1) % SEQUENCE_COUNT;
+      EEPROM.update(EEPROM_ADDR_MAGIC, EEPROM_MAGIC);
+      EEPROM.update(EEPROM_ADDR_SEQ, activeSeq);
+      resetSequenceState();
+      seqDisplayUntil = millis() + SEQ_DISPLAY_MS;
     }
-    if (button[0].state && !btn0LongPressTriggered) {
-      if (millis() - btn0PressTime >= LONG_PRESS_MS) {
-        btn0LongPressTriggered = true;
-        activeSeq = (activeSeq + 1) % SEQUENCE_COUNT;
-        EEPROM.update(EEPROM_ADDR_MAGIC, EEPROM_MAGIC);
-        EEPROM.update(EEPROM_ADDR_SEQ, activeSeq);
-        resetSequenceState();
-        seqDisplayUntil = millis() + SEQ_DISPLAY_MS;
-      }
-    }
-    if (button[0].wasReleased && !btn0LongPressTriggered) {
+    if (button[0].wasReleased && !button[0].longPressTriggered) {
       if ((long)loopOverride.count * seqCLoopSec[activeSeq] > seqFruitSec[activeSeq]) {
         loopOverride.count = 0;
       }
